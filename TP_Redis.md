@@ -48,6 +48,23 @@ Pour voir si redis reponds:
 
 ![image](img/2025-11-25_22h30_18.png "Titre de l'image")
 
+## Redis rapide ?? 
+Redis est beaucoup plus rapide que les bases classiques pour plusieurs raisons :
+
+- les données sont stockées **directement en RAM**, pas sur disque ;
+- les commandes sont très simples, ce qui réduit la charge CPU.
+
+Cela en fait un excellent outil pour le cache, les sessions, les files de messages, les compteurs, etc
+
+## Les différentes structures de données Redis
+
+Redis propose plusieurs structures de données :
+
+- **String** : la valeur la plus simple (SET/GET)
+- **List** : liste ordonnée (RPUSH, LPOP…)
+- **Set** : ensemble de valeurs uniques (SADD, SMEMBERS…)
+- **Sorted Set** : ensembles triés
+
 ## Manipulation Redis
 
 1. Commandes Redis exécutées

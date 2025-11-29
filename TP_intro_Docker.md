@@ -12,6 +12,16 @@ Contrairement aux bases relationnelles qui utilisent des tables et un schéma st
 - Structure flexible sans schéma fixe  
 - Stockage des données en JSON/BSON  
 - Capacité de gérer de grands volumes de données distribuées  
+  
+### MongoDB est utilisé lorsque :
+- les données ne suivent pas un schéma fixe 
+- les volumes de données sont importants 
+- on a besoin d'une base distribuée
+  
+### MongoDB permet :
+- de stocker des documents ( avec tableaux, objets imbriqués, listes, etc.) 
+- d'effectuer des recherches simples ou complexes 
+- de manipuler les données sans migration de schéma 
 
 ## Installation de MongoDB 
 
