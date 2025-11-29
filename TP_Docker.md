@@ -19,7 +19,7 @@ db.films.count()
 
 ## 2. Examiner la structure d’un document
 ```mongodb
-db.films.findOne().pretty()
+db.films.findOne()
 ```
 ![image](img/2docker.png "Importation données")
 
@@ -62,7 +62,7 @@ db.films.find({
 ## 7. Supprimer l’affichage de _id
 ```mongodb
 db.films.find(
-  { genre: "Action", country: "France" },
+  { genre: "Action", country: "FR" },
   { _id: 0, summary: 0 }
 )
 
@@ -73,20 +73,26 @@ db.films.find(
 ## 8. Afficher uniquement le titre et l’année
 ```
 db.films.find(
-  { genre: "Action", country: "France" },
+  { genre: "Action", country: "FR" },
   { _id: 0, title: 1, year: 1 }
 )
 
 ```
+![image](img/2025-11-29_01h26_11.png "Importation données")
 
 ---
 
 ## 10. Films d’action français ayant une note > 10
 ```mongodb
 db.films.find(
-  { genre: "Action", pays: "France", grade: { $gt: 10 } },
-  { _id: 0, titre: 1, grade: 1 }
+  {
+    genre: "Action",
+    country: "FR",
+    "grades.note": { $gt: 10 }
+  },
+  { _id: 0, title: 1, grades: 1 }
 )
+
 ```
 
 ---
@@ -94,22 +100,23 @@ db.films.find(
 ## 11. Films dont toutes les notes sont > 10
 ```mongodb
 db.films.find({
-  grade: { $elemMatch: { $gt: 10 } }
+  grades: { $not: { $elemMatch: { note: { $lte: 10 } } } }
 })
+
 ```
 
 ---
 
 ## 12. Afficher tous les genres disponibles
-```mongodb
-db.films.distinct("genre")
-```
+`db.films.distinct("genre")`
+
+![image](img/2025-11-29_01h27_22.png "Importation données")
 
 ---
 
 ## 13. Afficher tous les grades disponibles
 ```mongodb
-db.films.distinct("grade")
+db.films.distinct("grades.grade")
 ```
 
 ---
@@ -119,14 +126,22 @@ db.films.distinct("grade")
 db.films.find({
   artistes: { $in: ["artist:4", "artist:18", "artist:11"] }
 })
+
+```
 ```
 
+db.films.find({
+  "actors.last_name": { $in: ["Pacino", "Grant", "Belmondo"] }
+})
+```
 ---
 
 ## 15. Films sans résumé
-```mongodb
-db.films.find({ resume: { $exists: false } })
-```
+`db.films.find({ resume: { $exists: false } })`
+
+Avec resumé
+
+`db.films.find({ resume: { $exists: false } })`
 
 ---
 
@@ -163,158 +178,42 @@ db.films.aggregate([
   { $sort: { _id: 1 } }
 ])
 ```
+![image](img/2025-11-29_01h29_32.png "Importation données")
 
 ---
 
-## 19. Moyenne des notes par genre
+
+## 19. Nombre de films par pays
 ```mongodb
 db.films.aggregate([
-  { $unwind: "$genre" },
-  { $group: { _id: "$genre", moyenne: { $avg: "$grade" } } },
-  { $sort: { moyenne: -1 } }
-])
-```
-
----
-
-## 20. Nombre de films par pays
-```mongodb
-db.films.aggregate([
-  { $unwind: "$pays" },
-  { $group: { _id: "$pays", total: { $sum: 1 } } },
+  { $group: { _id: "$country", total: { $sum: 1 } } },
   { $sort: { total: -1 } }
 ])
+
 ```
 
 ---
 
 # Partie 3 — Mises à jour
 
----
-
-## 21. Ajouter un champ etat
+## Incrémenter le nombre de votes
 ```mongodb
 db.films.updateOne(
-  { titre: "Jaws" },
-  { $set: { etat: "culte" } }
-)
-```
-
----
-
-## 22. Incrémenter le nombre de votes
-```mongodb
-db.films.updateOne(
-  { titre: "Inception" },
+  { title: "Inception" },
   { $inc: { votes: 100 } }
 )
+![image](img/2025-11-29_01h33_42.png "Importation données")
+
 ```
 
----
+##  Ajouter et Supprimer un champ
+`db.films.updateMany({}, { $set: { test: true } })`
 
-## 23. Supprimer un champ
 ```mongodb
 db.films.updateMany(
   {},
   { $unset: { poster: "" } }
 )
 ```
+![image](img/2025-11-29_01h38_34.png "Importation données")
 
----
-
-## 24. Modifier le réalisateur d’un film
-```mongodb
-db.films.updateOne(
-  { titre: "Titanic" },
-  { $set: { realisateur: "James Cameron" } }
-)
-```
-
----
-
-# Partie 4 — Requêtes complexes
-
----
-
-## 25. Films les mieux notés par décennie
-```mongodb
-db.films.aggregate([
-  { $match: { grade: { $exists: true } }},
-  { $project: {
-      titre: 1,
-      decade: { $subtract: ["$annee", { $mod: ["$annee", 10] }] },
-      grade: 1
-  }},
-  { $group: { _id: "$decade", maxRating: { $max: "$grade" } }},
-  { $sort: { _id: 1 }}
-])
-```
-
----
-
-## 26. Films dont le titre commence par "Star"
-```mongodb
-db.films.find(
-  { titre: /^Star/ },
-  { titre: 1 }
-)
-```
-
----
-
-## 27. Films avec plus de 2 genres
-```mongodb
-db.films.find(
-  { $where: "this.genre.length > 2" },
-  { titre: 1, genre: 1 }
-)
-```
-
----
-
-## 28. Films de Christopher Nolan
-```mongodb
-db.films.find(
-  { realisateur: "Christopher Nolan" },
-  { titre: 1, annee: 1, grade: 1 }
-)
-```
-
----
-
-# Partie 5 — Indexation
-
----
-
-## 29. Créer un index
-```mongodb
-db.films.createIndex({ annee: 1 })
-```
-
----
-
-## 30. Voir les index existants
-```mongodb
-db.films.getIndexes()
-```
-
----
-
-## 31. Analyse avec explain()
-```mongodb
-db.films.find({ annee: 1995 }).explain("executionStats")
-```
-
----
-
-## 32. Supprimer un index
-```mongodb
-db.films.dropIndex({ annee: 1 })
-```
-
----
-
-## 33. Créer un index composé
-```mongodb
-db.films.createIndex({ annee: 1, grade: -1 })
-```
