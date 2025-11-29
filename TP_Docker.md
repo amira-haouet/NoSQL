@@ -169,9 +169,8 @@ db.films.find({
 
 # Partie 2 — Agrégations MongoDB
 
----
 
-## 18. Nombre de films par année
+## Nombre de films par année
 ```mongodb
 db.films.aggregate([
   { $group: { _id: "$annee", total: { $sum: 1 } } },
@@ -180,10 +179,9 @@ db.films.aggregate([
 ```
 ![image](img/2025-11-29_01h29_32.png "Importation données")
 
----
 
 
-## 19. Nombre de films par pays
+##  Nombre de films par pays
 ```mongodb
 db.films.aggregate([
   { $group: { _id: "$country", total: { $sum: 1 } } },
@@ -217,3 +215,4 @@ db.films.updateMany(
 ```
 ![image](img/2025-11-29_01h38_34.png "Importation données")
 
+Ce TP m'a permis de comprendre le fonctionnement d’une base NoSQL orientée documents, la flexibilité offerte par MongoDB dans la gestion de data.
