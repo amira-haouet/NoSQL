@@ -4,7 +4,7 @@
 
 1. Qu’est-ce qu’un Replica Set dans MongoDB ?
    
-Un Replica Set est un groupe de serveurs MongoDB qui contiennent la même copie des données.
+Un Replica Set est un groupe de serveurs MongoDB qui contiennent la même copie des données, avec un Primary et un ou plusieurs Secondaries, pour assurer haute disponibilité et tolérance aux pannes.
 
 Il garantit :
 
@@ -109,15 +109,16 @@ rs.status()
 
 11.  Comment identifier le rôle actuel (Primary / Secondary / Arbitre) d’un nœud ?
     
-On exécute `rs.status()` puis on regarde, pour chaque membre, le champ
-stateStr : si PRIMARY nœud primaire ou SECONDARY : nœud secondaire ou ARBITER : arbitre
-
-Ou bien : 
 
 ```
     rs.isMaster()
 ```
 ![image](img_tp2/masterornot.png "Importation MongoDB")
+
+Ou bien : 
+
+On exécute `rs.status()` puis on regarde, pour chaque membre, le champ
+stateStr : si PRIMARY nœud primaire ou SECONDARY : nœud secondaire ou ARBITER : arbitre
 
 
 
@@ -141,7 +142,7 @@ Un arbitre ne stocke pas de données, mais il participe au vote lors de l’éle
     
 `rs.config()` est une commande utile pour afficher la configuration du Replica Set (liste des membres, adresses/ports, priorités, votes, éventuel slaveDelay…), et donc pour vérifier ou modifier la configuration du cluster.
 
-```
+```mongodb
 cfg.members[1].slaveDelay = 60   
 cfg.members[1].priority = 0      
 rs.reconfig(cfg)
@@ -153,49 +154,124 @@ rs.reconfig(cfg)
 ![alt text](img_tp2/rsconfig.png)
 
 ## Partie 3 — Résilience et tolérance aux pannes
+
 15. Que se passe-t-il si le Primary tombe en panne et qu’il n’y a pas de majorité ?
+    Si le Primary tombe en panne et qu’il n’y a pas de majorité de nœuds disponibles :
+    - MongoDB ne peut pas élire un nouveau Primary.
+    - Le Replica Set se retrouve donc sans Primary.
+    - Dans cet état, les écritures ne sont plus possibles. Les commandes d’insert, update, delete vont échouer.
+seules les lectures sur les Secondary sont encore possibles selon la configuration.
+
+16.  Comment MongoDB choisit-il un nouveau Primary ? Quels critères utilise-t-il ?
+
+MongoDB choisit un nouveau Primary en lançant une élection entre les nœuds du Replica Set. Un des nœuds Secondary peut alors devenir Primary s’il remplit certaines conditions
+`: un nœud Secondary éligible se porte candidat, et il devient Primary seulement s’il obtient la majorité des votes. 
+Parmi les candidats possibles, MongoDB privilégie ceux qui sont autorisés à être Primary (pas arbitre, pas priorité 0), qui sont suffisamment à jour en réplication, et dont la priority est la plus élevée dans la configuration du Replica Set. S’il n’y a pas de majorité, aucun Primary n’est élu.`
+
+17.   Qu’est-ce qu’une élection dans MongoDB ?
+
+`Une élection dans MongoDB, c’est le processus automatique par lequel les nœuds d’un replica set votent pour désigner un Primary lorsqu’il n’y en a plus (panne, redémarrage, rs.stepDown()).`
+Les membres échangent des messages, comptent les votes, et le nœud qui obtient la majorité devient le nouveau Primary, ce qui évite d’avoir deux Primary en même temps.
+
+18.  Que signifie auto-dégradation du Replica Set ? Dans quel cas cela survient-il ?
     
-16. Comment MongoDB choisit-il un nouveau Primary ? Quels critères utilise-t-il ?
+`L’auto-dégradation d’un Replica Set, c’est le fait que le cluster se met tout seul en mode dégradé, c’est-à-dire sans Primary, dès qu’il ne voit plus la majorité des membres.`
+
+19.   Pourquoi est-il conseillé d’avoir un nombre impair de nœuds dans un Replica Set ?
+
+`On conseille d’avoir un nombre impair de nœuds pour faciliter l’obtention d’une majorité lors des élections du Primary. Avec un nombre impair, il y a moins de risques d’avoir une situation bloquée (50/50), donc le Replica Set peut plus facilement élire ou garder un Primary même en cas de panne ou de partition réseau, ce qui améliore la tolérance aux pannes.`
     
-17. Qu’est-ce qu’une élection dans MongoDB ?
-    
-18. Que signifie auto-dégradation du Replica Set ? Dans quel cas cela survient-il ?
-    
-19. Pourquoi est-il conseillé d’avoir un nombre impair de nœuds dans un Replica Set ?
-    
-20. Quelles conséquences a une partition réseau sur le fonctionnement du cluster ?
+20.   Quelles conséquences a une partition réseau sur le fonctionnement du cluster ?
+
+`Le côté qui a la majorité peut élire ou garder un Primary et continuer à accepter les écritures. Le côté minoritaire devient ou reste en mode secondaire uniquement, sans Primary, donc sans écritures.`
 
 ## Partie 4 — Scénarios pratiques
 
 21. Vous avez 3 nœuds : 27017 (Primary) , 27018 (Secondary) , et 27019 (Arbitre) .
 Que se passe-t-il si le Primary devient injoignable ?
 
+`27018 (Secondary) et 27019 (Arbiter) forment encore la majorité des votes (2/3).
+Ils lancent une élection et 27018 est élu nouveau Primary..
+`
+
 22. Vous avez configuré un Secondary avec un slaveDelay de 120 secondes.
 Quelle est son utilité ? Quels usages peut-on en faire dans la vraie vie ?
 
-23. Un client exige une lecture toujours à jour, même en cas de bascule.
+`Un Secondary avec slaveDelay: 120 applique les opérations du Primary avec 2 minutes de retard.`
+
+`Utilité:`
+
+- Protection contre les erreurs :
+si quelqu’un supprime / modifie des données par erreur, on peut encore les retrouver sur le Secondary « retardé » avant que l’erreur ne soit répliquée.
+
+- Analyse sur un état ancien des données, sans impacter le Primary.
+
+`En pratique on lui met priority: 0 pour qu’il ne puisse pas devenir Primary.`
+
+23.  Un client exige une lecture toujours à jour, même en cas de bascule.
 Quelles options de readConcern et writeConcern recommanderiez-vous ?
 
-24. Dans une application critique, vous voulez garantir que l’écriture est confirmée par au
-moins deux nœuds.
-Quelle option de writeConcern devez-vous utiliser ?
-25. Un étudiant a lu depuis un Secondary et récupéré une donnée obsolète. Expliquez pourquoi
-et comment éviter cela.
-26. Montrez la commande pour vérifier quel nœud est actuellement Primary dans votre Replica
-Set.
+``
+
+24. Dans une application critique, vous voulez garantir que l’écriture est confirmée par au moins deux nœuds. Quelle option de writeConcern devez-vous utiliser ?
+
+Dans un Replica Set de plusieurs nœuds, pour s’assurer qu’une écriture est validée par au moins deux nœuds, l’option suivante peut être utilisée :
+`writeConcern: { w: 2 }`
+
+L’écriture n’est considérée comme réussie que lorsque le Primary et au moins un Secondary ont confirmé l’opération.
+Dans un Replica Set de 3 nœuds ou plus, l’option suivante est souvent utilisée car elle s’adapte automatiquement au nombre de membres : `writeConcern: { w: "majority" }`
+
+
+25. Un étudiant a lu depuis un Secondary et récupéré une donnée obsolète. Expliquez pourquoi et comment éviter cela.
+Un Secondary peut renvoyer une donnée obsolète car la réplication dans MongoDB est asynchrone :
+
+- Le Primary applique d’abord l’écriture localement.
+
+- Les Secondaries récupèrent les opérations via l’oplog avec un léger retard (replication lag).
+
+- Si une lecture est effectuée sur un Secondary avant qu’il ait appliqué la dernière écriture, l’ancienne valeur est renvoyée.
+
+Pour éviter ce problème : `pour les lectures critiques : on met readPreference: "primary" (et readConcern: "majority"),`
+
+26. Montrez la commande pour vérifier quel nœud est actuellement Primary dans votre ReplicaSet.  
+
+Depuis le shell on se connecte à un membre du Replica Set : `rs.status()`
+=> Dans le résultat, le membre dont stateStr vaut  `PRIMARY` est le nœud Primary actuel. 
+
+Oubien  `rs.isMaster() pour voir si le nœud courant est Primary.`
+
 27. Expliquez comment forcer une bascule manuelle du Primary sans interruption majeure.
+
+Avec la commande `rs.stepDown(60)`
+=> rs.stepDown() force le Primary à se dégrader en Secondary et déclenche une élection. Un autre nœud (ayant la majorité) devient Primary. && `Le paramètre 60` empêche l’ancien Primary de se faire réélire pendant 60 secondes.
+
 28. Décrivez la procédure pour ajouter un nouveau nœud secondaire dans un Replica Set en
 fonctionnement.
+
 29. Quelle commande permet de retirer un nœud défectueux d’un Replica Set ?
-30. Comment configurer un nœud secondaire pour qu’il soit caché (non visible aux clients) ?
-Pourquoi ferait-on cela ?
+
+30. Comment configurer un nœud secondaire pour qu’il soit caché (non visible aux clients) ? Pourquoi ferait-on cela ?
+
 31. Montrez comment modifier la priorité d’un nœud afin qu’il devienne le Primary préféré.
-32. Expliquez comment vérifier le délai de réplication d’un Secondary par rapport au Primary.
-Questions complémentaires
+    
+32. Expliquez comment vérifier le délai de réplication d’un Secondary par rapport au Primary
+    
 33. Que fait la commande rs.freeze() et dans quel scénario est-elle utile ?
-34. Comment redémarrer un Replica Set sans perdre la configuration ?
-35. Expliquez comment surveiller en temps réel la réplication via les logs MongoDB ou
-commandes shell
+
+`rs.freeze(60)` empêche le noeud de devenir Primary pendant la durée indiquée ( 60 s).
+
+`Intérêt :`
+
+- Garder un nœud obligatoirement Secondary pendant une opération de maintenance par exemple.
+
+- Eviter qu’un nœud en retard soit élu Primary.
+
+
+34.  Comment redémarrer un Replica Set sans perdre la configuration ?
+    
+35.  Expliquez comment surveiller en temps réel la réplication via les logs MongoDB ou
+commandes shell.
+
 
 ## Questions complémentaires
 
