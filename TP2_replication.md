@@ -245,18 +245,54 @@ Oubien  `rs.isMaster() pour voir si le nœud courant est Primary.`
 Avec la commande `rs.stepDown(60)`
 => rs.stepDown() force le Primary à se dégrader en Secondary et déclenche une élection. Un autre nœud (ayant la majorité) devient Primary. && `Le paramètre 60` empêche l’ancien Primary de se faire réélire pendant 60 secondes.
 
-28. Décrivez la procédure pour ajouter un nouveau nœud secondaire dans un Replica Set en
-fonctionnement.
+28. Décrivez la procédure pour ajouter un nouveau nœud secondaire dans un Replica Set en fonctionnement.
 
-29. Quelle commande permet de retirer un nœud défectueux d’un Replica Set ?
 
-30. Comment configurer un nœud secondaire pour qu’il soit caché (non visible aux clients) ? Pourquoi ferait-on cela ?
+Pour ajouter un nouveau Secondary sans arrêter le Replica Set
 
-31. Montrez comment modifier la priorité d’un nœud afin qu’il devienne le Primary préféré.
-    
-32. Expliquez comment vérifier le délai de réplication d’un Secondary par rapport au Primary
-    
-33. Que fait la commande rs.freeze() et dans quel scénario est-elle utile ?
+    1. On lance un nouveau serveur avec le même nom de replica set
+    2. On se connecte au Primary avec le shell MongoDB
+    3. On ajoute le nœud au Replica Set avec la commande
+    4. On vérifie avec rs.status() que le membre passe SECONDARY
+
+
+29.  Quelle commande permet de retirer un nœud défectueux d’un Replica Set ?
+Depuis le Primary : `rs.remove("hostname:port")` => `rs.remove("mongo2:27017")`
+
+
+30.   Comment configurer un nœud secondaire pour qu’il soit caché (non visible aux clients) ? Pourquoi ferait-on cela ?
+
+Pour configurer un Secondary comme nœud caché :
+
+    - On recupere la configuration : conf = rs.config()
+    - On modifie le membre concerné :
+        conf.members[i].hidden = true
+        conf.members[i].priority = 0
+    - on applique la nouvelle configuration : rs.reconfig(conf)
+
+`Pourquoi ?`
+Pour créer un nœud réservé à des usages internes sans qu’il soit utilisé par les clients ni risquer qu’il devienne Primary
+
+31.    Montrez comment modifier la priorité d’un nœud afin qu’il devienne le Primary préféré.
+
+```
+config = rs.config()
+config.members[1].priority = 2
+config.members[0].priority = 1
+rs.reconfig(config)
+```
+`Le nœud avec la priorité la plus élevée sera privilégié comme futur Primary lors de la prochaine élection.`
+
+32.    Expliquez comment vérifier le délai de réplication d’un Secondary par rapport au Primary
+
+```
+On utilise rs.status() et on compare les champs optimeDate du Primary et des Secondary pour estimer le décalage.
+```
+
+ou bien la commande `rs.printSlaveReplicationInfo()`
+
+
+33.    Que fait la commande rs.freeze() et dans quel scénario est-elle utile ?
 
 `rs.freeze(60)` empêche le noeud de devenir Primary pendant la durée indiquée ( 60 s).
 
@@ -269,26 +305,46 @@ fonctionnement.
 
 34.  Comment redémarrer un Replica Set sans perdre la configuration ?
     
-35.  Expliquez comment surveiller en temps réel la réplication via les logs MongoDB ou
-commandes shell.
+Pour redémarrer un Replica Set sans perdre la configuration, il faut pas toucher aux volumes ou aux dossiers de données, car toute la configuration du Replica Set est enregistrée dans le dbPath de chaque nœud.
+On peut arrêter les conteneurs MongoDB sans les supprimer, puis les redémarrer normalement. Lors du redémarrage, chaque mongod recharge automatiquement la configuration et le Replica Set se reforme tout seul. Il ne reste plus qu’à vérifier l’état du cluster avec la commande rs.status() pour assurer que tout fonctionne correctement.
 
+1.   Expliquez comment surveiller en temps réel la réplication via les logs MongoDB ou commandes shell.
+- `rs.status()` 
+- `rs.printReplicationInfo()`  
+- `rs.printSlaveReplicationInfo()`   
+- `db.currentOp()` 
+- `Logs mongod`
+
+Pour surveiller la réplication en temps réel, on utilise : les logs du serveur MongoDB et l’état du Replica Set visible. Les logs montrent en continu ce que font les nœuds : ils enregistrent les heartbeats échangés entre les membres, les éventuels retards de réplication, les synchronisations en cours, les changements d’état (passage en Primary ou Secondary) et les erreurs. 
+En les observant, on peut détecter immédiatement une panne, une partition réseau ou un nœud qui ne parvient plus à suivre le Primary. Le shell, lui, permet d’obtenir à tout moment une vue globale sur l’état de la réplication : il indique le rôle de chaque nœud, son état de santé et surtout son retard éventuel par rapport au Primary. En combinant ces deux sources, on peut suivre en temps réel la bonne propagation des données et repérer rapidement tout problème dans la réplication.
 
 ## Questions complémentaires
 
 37. Qu’est-ce qu’un Arbitre (Arbiter) et pourquoi ne stocke-t-il pas de données ?
-38. Comment vérifier la latence de réplication entre le Primary et les Secondaries ?
-39. Quelle commande MongoDB permet d’afficher le retard de réplication des membres
-secondaires ?
+
+Un **Arbiter** est un membre spécial du Replica Set qui :
+- **participe aux élections** (il vote pour le Primary),  
+- mais **ne stocke pas de données** (pas d’oplog, pas de dataset). 
+
+38.  Comment vérifier la latence de réplication entre le Primary et les Secondaries ?
+
+39.  Quelle commande MongoDB permet d’afficher le retard de réplication des membres
+secondaires ? `rs.printSlaveReplicationInfo()`
+
 40. Quelle est la différence entre la réplication asynchrone et synchrone ? Quel type utilise
 MongoDB ?
+
 41. Peut-on modifier la configuration d’un Replica Set sans redémarrer les serveurs ?
+
 42. Que se passe-t-il si un nœud Secondary est en retard de plusieurs minutes ?
+
 43. Comment MongoDB gère-t-il les conflits de données lors de la réplication ?
+
 44. Est-il possible d’avoir plusieurs Primarys simultanément dans un Replica Set ? Pourquoi ?
+
 45. Pourquoi est-il déconseillé d’utiliser un Secondary pour des opérations d’écriture même en
 lecture préférée secondaire ?
-46. Quelles sont les conséquences d’un réseau instable sur un Replica Set 
 
-## Réferences : 
+46. Quelles sont les conséquences d’un réseau instable sur un Replica Set ?
 
-https://www.mongodb.com/docs/manual/replication/
+## Réferences : https://www.mongodb.com/docs/manual/replication/
