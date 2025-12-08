@@ -308,7 +308,7 @@ ou bien la commande `rs.printSlaveReplicationInfo()`
 Pour redémarrer un Replica Set sans perdre la configuration, il faut pas toucher aux volumes ou aux dossiers de données, car toute la configuration du Replica Set est enregistrée dans le dbPath de chaque nœud.
 On peut arrêter les conteneurs MongoDB sans les supprimer, puis les redémarrer normalement. Lors du redémarrage, chaque mongod recharge automatiquement la configuration et le Replica Set se reforme tout seul. Il ne reste plus qu’à vérifier l’état du cluster avec la commande rs.status() pour assurer que tout fonctionne correctement.
 
-1.   Expliquez comment surveiller en temps réel la réplication via les logs MongoDB ou commandes shell.
+36.   Expliquez comment surveiller en temps réel la réplication via les logs MongoDB ou commandes shell.
 - `rs.status()` 
 - `rs.printReplicationInfo()`  
 - `rs.printSlaveReplicationInfo()`   
@@ -334,9 +334,36 @@ secondaires ? `rs.printSlaveReplicationInfo()`
 40. Quelle est la différence entre la réplication asynchrone et synchrone ? Quel type utilise
 MongoDB ?
 
+`Réplication synchrone`
+
+- Le Primary attend la confirmation des Secondaries avant de valider une écriture.
+
+- Cohérence forte.
+
+- Plus lente.
+
+`Réplication asynchrone`
+
+- Le Primary confirme l’écriture sans attendre les Secondaries.
+
+- Plus rapide.
+
+- Peut produire des incohérences temporaires (cohérence à terme).
+
 41. Peut-on modifier la configuration d’un Replica Set sans redémarrer les serveurs ?
+``
+cfg = rs.config()
+cfg.members[1].priority = 2
+rs.reconfig(cfg)
+```
 
 42. Que se passe-t-il si un nœud Secondary est en retard de plusieurs minutes ?
+
+- il renvoie des données obsolètes lors des lectures (s’il est utilisé avec readPreference: "secondary"),
+
+- il ne peut pas devenir Primary, car il n’est pas à jour,
+
+- il peut être forcé à effectuer une resynchronisation complète, si l’oplog n’a plus les données nécessaires.
 
 43. Comment MongoDB gère-t-il les conflits de données lors de la réplication ?
 
