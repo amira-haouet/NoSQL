@@ -327,11 +327,13 @@ Un **Arbiter** est un membre spécial du Replica Set qui :
 - mais **ne stocke pas de données** (pas d’oplog, pas de dataset). 
 
 38.  Comment vérifier la latence de réplication entre le Primary et les Secondaries ?
+Méthode 1 : rs.printSlaveReplicationInfo()
+Méthode 2 : comparer optimeDate avec rs.status()
 
-39.  Quelle commande MongoDB permet d’afficher le retard de réplication des membres
+40.  Quelle commande MongoDB permet d’afficher le retard de réplication des membres
 secondaires ? `rs.printSlaveReplicationInfo()`
 
-40. Quelle est la différence entre la réplication asynchrone et synchrone ? Quel type utilise
+41. Quelle est la différence entre la réplication asynchrone et synchrone ? Quel type utilise
 MongoDB ?
 
 `Réplication synchrone`
@@ -351,7 +353,8 @@ MongoDB ?
 - Peut produire des incohérences temporaires (cohérence à terme).
 
 41. Peut-on modifier la configuration d’un Replica Set sans redémarrer les serveurs ?
-``
+
+```
 cfg = rs.config()
 cfg.members[1].priority = 2
 rs.reconfig(cfg)
@@ -366,12 +369,38 @@ rs.reconfig(cfg)
 - il peut être forcé à effectuer une resynchronisation complète, si l’oplog n’a plus les données nécessaires.
 
 43. Comment MongoDB gère-t-il les conflits de données lors de la réplication ?
+Le Primary est l’unique source de vérité.
+Les Secondaries ne génèrent pas de nouvelles écritures → donc pas de conflit entre nœuds.
+En cas de divergence (par exemple après une panne), MongoDB rejoue l’oplog du Primary pour remettre le Secondary à jour.
 
 44. Est-il possible d’avoir plusieurs Primarys simultanément dans un Replica Set ? Pourquoi ?
+
+MongoDB utilise un système d’élection basé sur la majorité : un seul Primary peut exister à la fois.
+
+En cas de partition réseau :
+
+- seul le groupe qui possède la majorité reste ou devient Primary,
+
+- l’autre groupe passe en mode SECONDARY sans Primary.
 
 45. Pourquoi est-il déconseillé d’utiliser un Secondary pour des opérations d’écriture même en
 lecture préférée secondaire ?
 
+Écrire sur un Secondary entraînerait :
+
+- des conflits d’écriture
+
+- une perte de l’ordre strict des opérations
+
+- une perte de cohérence
+
+Les Secondaries servent uniquement à :
+
+- lire (si configuré),
+
+- répliquer les modifications du Primary.
+
 46. Quelles sont les conséquences d’un réseau instable sur un Replica Set ?
+Un réseau instable peut faire perdre temporairement la communication entre les nœuds, ce qui provoque des élections répétées et l’absence momentanée de Primary. Les écritures deviennent alors impossibles. En cas de partition, seul le côté ayant la majorité continue à fonctionner normalement, tandis que l’autre passe en mode secondaire. Cela entraîne aussi un retard de réplication et une cohérence dégradée à court terme.
 
 ## Réferences : https://www.mongodb.com/docs/manual/replication/
