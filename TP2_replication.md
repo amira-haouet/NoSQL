@@ -131,7 +131,7 @@ stateStr : si PRIMARY nœud primaire ou SECONDARY : nœud secondaire ou ARBITER 
 ![image](img_tp2/basculprimary_sec.png "Importation MongoDB")
 
 
-1.  Comment peut-on désigner un nœud comme Arbitre ? Pourquoi le faire ?
+13.  Comment peut-on désigner un nœud comme Arbitre ? Pourquoi le faire ?
 
 `rs.addArb("hostname:port")`  
 Un arbitre ne stocke pas de données, mais il participe au vote lors de l’élection du Primary. On l’ajoute pour : atteindre une majorité de votes plus facilement (surtout avec un nombre pair de nœuds de données), éviter que le cluster se bloque en cas de panne ou de partition réseau. Et améliore donc la tolérance aux pannes sans consommer d’espace disque pour les données.
@@ -211,7 +211,7 @@ si quelqu’un supprime / modifie des données par erreur, on peut encore les re
 23.  Un client exige une lecture toujours à jour, même en cas de bascule.
 Quelles options de readConcern et writeConcern recommanderiez-vous ?
 
-``
+Pour garantir une lecture toujours à jour même en cas de bascule, il faut utiliser `writeConcern`: "majority" pour que chaque écriture soit confirmée par la majorité des nœuds avant d’être acceptée, et `readConcern`: "majority" pour que les lectures ne retournent que des données validées par cette même majorité. Cette combinaison évite de lire des valeurs obsolètes, même si le Primary change.
 
 24. Dans une application critique, vous voulez garantir que l’écriture est confirmée par au moins deux nœuds. Quelle option de writeConcern devez-vous utiliser ?
 
