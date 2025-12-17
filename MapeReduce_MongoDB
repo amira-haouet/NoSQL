@@ -1,8 +1,0 @@
-
-#Introduction à MapeReduce avec MongoDB
-
-MapReduce est un modèle de traitement distribué conçu pour analyser de larges volumes de données. Il s’appuie sur deux étapes:
-
-- Map : c'est pour parcourir chaque document d’une collection et produire des paires (clé, valeur) 
-
-- Reduce : pour regrouper et combiner les valeurs associées à une même clé afin d’obtenir un résultat synthétique.

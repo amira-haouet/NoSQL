@@ -7,6 +7,18 @@ CouchDB est un système de gestion de base de données NoSQL orienté documents.
 
 CouchDB est souvent choisi pour sa simplicité de mise en œuvre et son orientation vers le web. Il est particulièrement adapté aux applications distribuées et aux environnements où les données évoluent fréquemment. Son fonctionnement repose directement sur HTTP, ce qui facilite son intégration avec des applications web et des API REST.
 
+
+# MapReduce
+MapReduce est un modèle de traitement distribué conçu pour analyser de larges volumes de données. Il s’appuie sur deux étapes:
+
+- Map : c'est pour parcourir chaque document d’une collection et produire des paires (clé, valeur) 
+
+- Reduce : pour regrouper et combiner les valeurs associées à une même clé afin d’obtenir un résultat synthétique.
+
+![image](img_tp3_tp4/hq720.png "Importation données")
+
+
+
 ## Fonctionnement
 
 CouchDB fonctionne à l’aide de requêtes HTTP standards telles que GET, PUT, POST et DELETE. Chaque base de données et chaque document sont accessibles via une URL. Une interface graphique intégrée permet également de consulter et manipuler les données sans écrire de code.
@@ -16,7 +28,6 @@ Pour réaliser des traitements analytiques et des agrégations sur les données,
 ## Utilité
 
 CouchDB est principalement utilisé pour gérer de grandes quantités de données semi-structurées ou non structurées. Il est particulièrement pertinent dans des contextes distribués, où la tolérance aux pannes, la disponibilité des données et la simplicité d’accès sont essentielles. Il convient bien aux applications web, mobiles ou collaboratives nécessitant une synchronisation et une forte flexibilité des données.
-
 
 
 1. Qu’est-ce que MapReduce ?
@@ -355,3 +366,8 @@ db.movies.mapReduce(map, reduce, { out: "realisateurs_notes" });
 
 db.realisateurs_notes.find({ value: { $gt: 80 } })
 ```
+
+
+image references :
+- https://www.youtube.com/watch?v=cHGaQz0E7AU
+- https://www.mongodb.com/docs/manual/sharding/
