@@ -151,8 +151,13 @@ Pour augmenter la capacité du cluster ou répartir la charge, on peut ajouter u
 L’ajout se fait via le routeur mongos avec la commande suivante :
 
 
+`sh.addShard("replicashard3/localhost:20006")`
 
 
+
+## 17. Comment vérifier l’état du cluster shardé ?
+
+MongoDB fournit plusieurs commandes pour vérifier l’état du cluster shardé :
 
 
 
