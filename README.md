@@ -21,12 +21,7 @@ Les différents travaux sont organisés sous forme de fichiers Markdown, chacun 
 
 ### 1. Introduction à MongoDB
 
-Ce TP présente les bases de MongoDB et le modèle orienté documents :
-- documents JSON / BSON,
-- bases et collections,
-- opérations CRUD,
-- premières requêtes.
-
+Ce TP présente les bases de MongoDB et le modèle orienté documents 
  Lien :  
 [TP_intro_MongoDB.md](./TP_intro_MongoDB.md)
 
@@ -34,12 +29,7 @@ Ce TP présente les bases de MongoDB et le modèle orienté documents :
 
 ### 2. Manipulation de MongoDB
 
-Ce TP approfondit l’utilisation de MongoDB :
-- insertion et lecture de documents,
-- requêtes avec filtres et projections,
-- manipulation avancée des données.
-
- Lien :  
+Lien :  
 [TP_MongoDB.md](./TP_MongoDB.md)
 
 ---
@@ -47,26 +37,23 @@ Ce TP approfondit l’utilisation de MongoDB :
 ### 3. Réplication MongoDB
 
 Ce TP est consacré à la **réplication et à la tolérance aux pannes** :
+ Lien :  
+[TP2_replication.md](./TP2_replication.md)
 - replica sets,
 - rôles PRIMARY / SECONDARY,
 - mécanismes de failover,
 - impact sur la cohérence et la disponibilité.
-
- Lien :  
-[TP2_replication.md](./TP2_replication.md)
 
 ---
 
 ### 4. Partitionnement (Sharding)
 
 Ce TP traite du **partitionnement horizontal des données** dans MongoDB :
+Lien :  
+[TP3_Partitionnement.md](./TP3_Partitionnement.md)
 - architecture shardée,
 - shards, config servers et routeur mongos,
 - clé de sharding, chunks et balancer,
-- bonnes pratiques et problèmes courants (hot shards).
-
- Lien :  
-[TP3_Partitionnement.md](./TP3_Partitionnement.md)
 
 ---
 
@@ -74,9 +61,6 @@ Ce TP traite du **partitionnement horizontal des données** dans MongoDB :
 
 Ce TP introduit le modèle de calcul **MapReduce** :
 - principe des fonctions Map et Reduce,
-- agrégation distribuée,
-- application du modèle avec MongoDB.
-
  Lien principal :  
 [TP_4_MapReduce.md](./TP_4_MapReduce.md)
 
@@ -87,11 +71,7 @@ Ce TP introduit le modèle de calcul **MapReduce** :
 
 ### 6. Redis – Base de données clé–valeur
 
-Ce TP présente Redis et les bases de données clé–valeur :
-- principes fondamentaux,
-- cas d’usage,
-- différences avec MongoDB.
-
+Ce TP présente Redis et les bases de données clé–valeur 
  Lien :  
 [TP_Redis.md](./TP_Redis.md)
 
