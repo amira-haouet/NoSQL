@@ -160,6 +160,16 @@ L’ajout se fait via le routeur mongos avec la commande suivante :
 MongoDB fournit plusieurs commandes pour vérifier l’état du cluster shardé :
 
 
+```
+sh.status() :Affiche l’état global du cluster, la liste des shards et la distribution des chunks.  
+
+db.printShardingStatus() : Affiche une vue détaillée de la configuration du sharding (selon la version de MongoDB).  
+
+db.stats() : Fournit des statistiques générales sur la base de données.
+
+```
+
+
 
 ---
 
