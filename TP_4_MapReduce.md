@@ -320,6 +320,8 @@ db.movies.mapReduce(map, reduce, { out: "films_par_lettre" });
 ```
 
 14. Note moyenne par année
+
+```
 map = function () {
   if (this.grades) {
     let avg = this.grades.reduce((s,g)=>s+g.score,0) / this.grades.length;
@@ -332,6 +334,8 @@ reduce = function (key, values) {
 };
 
 db.movies.mapReduce(map, reduce, { out: "note_moyenne_par_annee" });
+```
+
 
 16. Réalisateurs avec une note moyenne supérieure à 80
 
