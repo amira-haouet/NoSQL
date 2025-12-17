@@ -2,14 +2,15 @@ Les systèmes NoSQL, et en particulier MongoDB, proposent pour cela des mécanis
 
 Parmi ces mécanismes, le sharding (ou partitionnement horizontal) occupe une place centrale. Il permet de répartir les données d’une collection sur plusieurs serveurs, appelés shards, afin de mieux exploiter les ressources matérielles disponibles et d’éviter les limitations d’un serveur unique.
 
+![image](img_tp3_tp4/sharded-cluster-mixed.bakedsvg.svg "Importation données")
+
+
 Une architecture shardée MongoDB repose sur plusieurs composants coopérant ensemble :
 les shards qui stockent les données, les config servers qui conservent les métadonnées de partitionnement, et le routeur mongos qui assure la distribution des requêtes clients.
 Les figures ci-dessous illustrent respectivement le principe général d’un cluster shardé et une architecture MongoDB shardée en environnement de production.
 
 Dans la suite, nous détaillons les principes du sharding, ses composants, son fonctionnement interne ainsi que les bonnes pratiques permettant d’en tirer pleinement parti.
 
-
-![image](img_tp3_tp4/sharded-cluster-mixed.bakedsvg.svg "Importation données")
 
 ![image](img_tp3_tp4/sharded-cluster-production-architecture.bakedsvg.svg "Importation données")
 
