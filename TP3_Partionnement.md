@@ -1,225 +1,234 @@
 
 1. Qu’est-ce que le sharding dans MongoDB et pourquoi est-il utilisé ?
 
-Le sharding est un mécanisme de partitionnement horizontal des données : une collection est découpée en fragments appelés chunks répartis sur plusieurs serveurs (shards).
+Le sharding est un mécanisme de **partitionnement horizontal** des données : Une collection est découpée en fragments appelés **chunks**, répartis sur plusieurs serveurs appelés **shards**.
+
 Il est utilisé pour :
+- gérer de **très grands volumes de données**,
+- assurer la **scalabilité horizontale**,
+- répartir la **charge en lecture et en écriture** entre plusieurs machines.
 
-- gérer des volumes de données très importants
+---
 
-- améliorer la scalabilité horizontale
+## 2. Différence entre sharding et réplication
 
-- répartir la charge en lecture/écriture.
+- **Réplication** : duplication des mêmes données sur plusieurs nœuds afin d’assurer la **tolérance aux pannes** et d’améliorer les performances en lecture.
+- **Sharding** : répartition de données différentes sur plusieurs nœuds afin de permettre le **passage à l’échelle**.
 
-2. Différence entre sharding et réplication
+Dans MongoDB, chaque shard est généralement un **replica set**.
 
-Réplication : duplication des mêmes données sur plusieurs nœuds → tolérance aux pannes et lectures distribuées.
+---
 
-Sharding : répartition des données différentes sur plusieurs nœuds → passage à l’échelle.
+## 3. Composants d’une architecture shardée
 
-3. Composants d’une architecture shardée
+Une architecture shardée MongoDB est composée de :
+- **Shards** : stockent les données (chaque shard est un replica set),
+- **Config servers** : stockent les métadonnées du cluster,
+- **mongos** : routeur qui distribue les requêtes vers les shards.
 
-- Shards : stockent les données (chacun est un replica set)
+---
 
-- Config Servers : stockent les métadonnées du sharding
-
-- mongos : routeur des requêtes clientes
-
-![image](img_tp3_tp4/sharded-cluster-mixed.bakedsvg.svg "Titre de l'image")
-
-
-
-4. Rôle des config servers (CSRS)
+## 4. Rôle des config servers (CSRS)
 
 Les config servers :
+- stockent les **métadonnées de sharding**,
+- maintiennent la correspondance **chunk → shard**,
+- conservent la configuration du cluster,
+- coordonnent le **balancing**.
 
-stockent la carte du cluster
+Sans config servers, le cluster devient inutilisable.
 
-maintiennent la correspondance chunk → shard
+---
 
-coordonnent le balancing.
+## 5. Rôle du routeur mongos
 
-5. Rôle du mongos router
+Le mongos :
+- est le **point d’entrée des clients**,
+- route les requêtes vers les shards concernés,
+- agrège les résultats,
+- ne stocke aucune donnée (stateless).
 
-Point d’entrée des clients
+---
 
-Route les requêtes vers le(s) shard(s) concerné(s)
+## 6. Comment MongoDB choisit-il le shard pour un document ?
 
-Agrège les résultats
+MongoDB utilise la **clé de sharding** :
+1. il identifie le **chunk** correspondant à la valeur de la clé,
+2. il détermine le shard qui possède ce chunk,
+3. le mongos envoie la requête au shard concerné.
 
-Est stateless (pas de données stockées)
+---
 
-6. Comment MongoDB choisit le shard pour un document ?
+## 7. Qu’est-ce qu’une clé de sharding ?
 
-À partir de la valeur de la clé de sharding MongoDB :
+La clé de sharding est l’attribut (ou ensemble d’attributs) utilisé pour :
+- partitionner les données,
+- distribuer les chunks,
+- router efficacement les requêtes.
 
-détermine le chunk correspondant
+Elle est essentielle au bon fonctionnement du sharding.
 
-identifie le shard qui possède ce chunk.
+---
 
-7. Qu’est-ce qu’une clé de sharding ?
+## 8. Critères d’une bonne clé de sharding
 
-C’est l’attribut (ou ensemble d’attributs) utilisé pour :
+Une bonne clé de sharding doit :
+- avoir une **forte cardinalité**,
+- assurer une **distribution uniforme**,
+- être **immuable** ou rarement modifiée,
+- être utilisée dans les requêtes,
+- éviter les valeurs monotones.
 
-- partitionner les données
+---
 
-- router les requêtes
+## 9. Qu’est-ce qu’un chunk ?
 
-- organiser les chunks.
+Un chunk est une **plage de valeurs de la clé de sharding**.  
+Il constitue l’unité de base de distribution des données.
 
+Taille par défaut : **128 Mo**.
 
-8. Critères d’une bonne clé de sharding
+---
 
-Forte cardinalité
+## 10. Comment fonctionne le splitting des chunks ?
 
-Bonne distribution
+Lorsqu’un chunk dépasse la taille maximale :
+- MongoDB le **divise en deux**,
+- met à jour les métadonnées,
+- peut déclencher une migration vers un autre shard.
 
-Immuable
+---
 
-Fréquemment utilisée dans les requêtes
-
-Évite les accès séquentiels
-
-9. Qu’est-ce qu’un chunk ?
-
-Un chunk est une plage de valeurs de la clé de sharding.
-Taille par défaut : 128 Mo.
-
-10. Comment fonctionne le splitting des chunks ?
-
-Quand un chunk dépasse la taille limite :
-
-MongoDB le divise en deux
-
-met à jour les métadonnées
-
-déclenche éventuellement une migration.
-
-11. Rôle du balancer
+## 11. Rôle du balancer
 
 Le balancer :
-
-- surveille la distribution des chunks
-
-- déplace les chunks pour équilibrer la charge
-
+- surveille la répartition des chunks,
+- déplace les chunks entre shards,
+- assure l’**équilibrage de la charge**,
 - fonctionne en arrière-plan.
 
-12. Quand et comment le balancer agit-il ?
+---
 
-- Lorsqu’un déséquilibre est détecté
+## 12. Quand et comment le balancer agit-il ?
 
-- Par migration de chunks entre shards
+Le balancer agit :
+- lorsqu’un déséquilibre est détecté,
+- en migrant des chunks entre shards,
+- de préférence pendant les périodes de faible charge.
 
-- De préférence en période de faible charge
+---
 
-13. Qu’est-ce qu’un hot shard ?
+## 13. Qu’est-ce qu’un hot shard ?
 
-Un shard surchargé (écritures ou lectures excessives).
-Cause principale : mauvais clé de sharding.
+Un hot shard est un shard surchargé en lectures ou écritures.  
+Il est généralement causé par une **mauvaise clé de sharding**.
 
-14. Problèmes d’une clé monotone
+Conséquence : baisse des performances globales.
 
-Insertion toujours sur le même shard
+---
 
-- Déséquilibre
+## 14. Problèmes d’une clé de sharding monotone
 
-- Saturation des ressources
+Une clé monotone (date croissante, compteur) entraîne :
+- des insertions sur un seul shard,
+- un déséquilibre important,
+- une saturation des ressources.
 
-Exemples : date croissante compteur auto-incrémenté.
+---
 
- Création des répertoires de données
+## 15. Comment activer le sharding sur une base et une collection ?
 
-
-
-15. Activer le sharding (DB et collection)
 ```
 sh.enableSharding("mabasefilms")
 sh.shardCollection("mabasefilms.films", { titre: 1 })
+
 ```
 
-16. Ajouter un nouveau shard
-`sh.addShard("replicashard3/localhost:20006")`
+## 16. Comment ajouter un nouveau shard ?
+
+Pour augmenter la capacité du cluster ou répartir la charge, on peut ajouter un nouveau shard à l’architecture MongoDB.
+
+L’ajout se fait via le routeur mongos avec la commande suivante :
 
 
-Le balancer redistribue automatiquement les chunks.
-17. Vérifier l’état du cluster
 
-Commandes utiles :
 
-sh.status()
-db.stats()
-db.films.stats()
 
-18. Quand utiliser une clé hashée ?
 
-Forte charge d’écriture
 
-Accès uniformes
+---
 
-Pas de requêtes par intervalle
+## 18. Quand utiliser une clé de sharding hashée ?
 
-{ champ: "hashed" }
+Une clé de sharding **hashée** est adaptée lorsque :
+- la charge d’écriture est élevée,
+- les accès sont uniformément répartis,
+- les requêtes par intervalle ne sont pas nécessaires.
 
-19. Quand privilégier une clé par intervalles ?
+Le hachage permet une **distribution homogène des données**, mais empêche les requêtes de type range.
 
-Requêtes de type range
+---
 
-Agrégations temporelles
+## 19. Quand privilégier une clé de sharding par intervalles ?
 
-Analyse par plages
+Une clé de sharding par intervalles est préférable pour :
+- les requêtes de type **range**,
+- les analyses temporelles,
+- les agrégations par plage de valeurs.
 
-20. Qu’est-ce que le zone sharding ?
+Ce type de clé conserve l’ordre des valeurs, mais peut provoquer des **hot shards** si les valeurs sont monotones.
 
-Mécanisme permettant d’assigner certaines plages de données à des shards spécifiques.
-Utile pour :
+---
 
-contraintes géographiques,
+## 20. Qu’est-ce que le zone sharding ?
 
-conformité réglementaire,
+Le zone sharding permet d’associer certaines **plages de valeurs de la clé de sharding** à des shards spécifiques.
 
-isolation logique.
+Il est utile pour :
+- les contraintes géographiques,
+- la conformité réglementaire,
+- l’isolation logique des données.
 
-21. Gestion des requêtes multi-shards
+---
 
-mongos envoie la requête à tous les shards concernés
+## 21. Comment MongoDB gère-t-il les requêtes multi-shards ?
 
-agrégation et fusion des résultats
- Plus coûteux qu’une requête ciblée.
+Lorsque la requête ne contient pas la clé de sharding, le mongos :
+- envoie la requête à tous les shards concernés,
+- collecte les résultats,
+- les agrège avant de les retourner au client.
 
-22. Optimiser les performances
+Ces requêtes sont plus coûteuses que les requêtes ciblées.
 
-Choisir une bonne clé
+---
 
-Utiliser des index compatibles
+## 22. Comment optimiser les performances en environnement shardé ?
 
-Éviter les requêtes multi-shards
+Pour optimiser les performances :
+- choisir une bonne clé de sharding,
+- utiliser des index adaptés,
+- éviter les requêtes multi-shards,
+- utiliser des clés hashées pour les écritures massives.
 
-Utiliser des clés hashées pour l’écriture massive
+---
 
-23. Indisponibilité d’un shard
+## 23. Que se passe-t-il lorsqu’un shard devient indisponible ?
 
-Si replica set : failover automatique
+Si le shard est un **replica set** :
+- un **failover automatique** est déclenché.
 
-Sinon : requêtes partielles ou échec
+Sinon :
+- certaines requêtes échouent,
+- les données hébergées sur ce shard deviennent temporairement inaccessibles.
 
-Le cluster reste actif si majorité atteinte
+---
 
-24. Migrer une collection existante
+## 24. Comment migrer une collection existante vers un schéma shardé ?
 
-Activer le sharding sur la DB
+Pour migrer une collection existante :
+- activer le sharding sur la base,
+- créer les index nécessaires,
+- shard(er) la collection,
+- laisser le balancer redistribuer les données progressivement.
 
-Créer les index nécessaires
-
-Appliquer sh.shardCollection
-
-Le balancer redistribue les données
-
-25. Outils et métriques de diagnostic
-
-sh.status()
-
-mongostat, mongotop
-
-logs MongoDB
-
-métriques : chunks, migrations, latence, hotspots
+Cette migration peut se faire sans arrêter le cluster.
